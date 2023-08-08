@@ -58,12 +58,17 @@ app.post('/', async (req, res) => {
         }
     }
 
+    function firstUpper(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1)
+    }
+
     //Get metadata about sheet
     const metaData = await googleSheets.spreadsheets.get({
         auth,
         spreadsheetId,
+        includeGridData: true,
     });
-
+    
 
     //Read rows from sheet
     const getRows = await googleSheets.spreadsheets.values.get({
@@ -72,11 +77,13 @@ app.post('/', async (req, res) => {
         range: 'Media Plan'
     })
 
-    //Get values from rows
-    const sheetValues = getRows.data.values;
     
-    //Filter values per campaign
 
+    //Get values from rows
+    const sheetValues = getRows.data.values;   
+
+    //Filter values per campaign
+/*    
     let mappedArray = sheetValues.filter(elem => {
         for (let i=0; i < automationId.length; i++){
             if (elem[29] === automationId[i]){
@@ -88,24 +95,26 @@ app.post('/', async (req, res) => {
             }
         }
     })
+*/
+
+
 
     //Write genesis
-    for (i=0; i < mappedArray.length; i++){
-        
-        await googleSheets.spreadsheets.values.append({
-        auth,
-        spreadsheetId,
-        range: "Genesis",
-        valueInputOption: "USER_ENTERED",
-        resource: {
-            values: [
-                [mappedArray[i][29], "", mappedArray[i][39], "", "", "", "", "", "", mappedArray[i][43], compareDates(mappedArray[i][31], today), mappedArray[i][32], "CPM", "", "", "", mappedArray[i][24] == "Tracking Tag" ? "1x1" : mappedArray[i][23], "", mappedArray[i][43], mappedArray[i][24] == "Tracking Tag" ? "Tracking_Ad" : mappedArray[i][9], compareDates(mappedArray[i][31], today) + " 12:00 AM", mappedArray[i][32] + " 11:59 PM", "No", "Even", "", mappedArray[i][45], mappedArray[i][30]],
-            ]
+        for (i=1; i < sheetValues.length; i++){
+            
+            await googleSheets.spreadsheets.values.append({
+            auth,
+            spreadsheetId,
+            range: "Genesis",
+            valueInputOption: "USER_ENTERED",
+            resource: {
+                values: [
+                    ["", "", sheetValues[i][2], "", "", sheetValues[i][4], compareDates(sheetValues[i][6], today), sheetValues[i][7], "", sheetValues[i][5], compareDates(sheetValues[i][6], today), sheetValues[i][7], "CPM", "", "", "", sheetValues[i][8], "", sheetValues[i][5], "Display", compareDates(sheetValues[i][6], today) + " 12:00 AM", sheetValues[i][7] + " 11:59 PM", "No", sheetValues[i][9], "", sheetValues[i][11], sheetValues[i][12]],
+                ]
+            }
+        })
         }
-    })
-    }
-     res.redirect("/");
-
+        res.redirect("/");   
 });
 
 app.listen(process.env.PORT || 1337, () => console.log('running on 1337'));
