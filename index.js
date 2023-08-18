@@ -34,11 +34,11 @@ app.post('/', async (req, res) => {
 
     // Input values logic
 
-    const { inputValue } = req.body;
+//    const { inputValue } = req.body;
 
-    const espacio = " ";
+  //  const espacio = " ";
     
-    let automationId = inputValue.split(espacio);
+   // let automationId = inputValue.split(espacio);
     
     
     // Ad date logic
@@ -58,9 +58,7 @@ app.post('/', async (req, res) => {
         }
     }
 
-    function firstUpper(string) {
-        return string.charAt(0).toUpperCase() + string.slice(1)
-    }
+
 
     //Get metadata about sheet
     const metaData = await googleSheets.spreadsheets.get({
@@ -80,7 +78,9 @@ app.post('/', async (req, res) => {
     
 
     //Get values from rows
-    const sheetValues = getRows.data.values;   
+    const sheetValues = getRows.data.values; 
+    
+    const hiddenRows = metaData.data.sheets[0].data[0].rowMetadata;
 
     //Filter values per campaign
 /*    
@@ -97,10 +97,19 @@ app.post('/', async (req, res) => {
     })
 */
 
+    let hiddenRowsIndex = [];
+    for (i=0; i < hiddenRows.length; i++){
+        if (hiddenRows[i].hasOwnProperty('hiddenByUser')) {
+            hiddenRowsIndex.push(i);
+        }
+    }
 
+    let filteredArray = sheetValues.filter((_, index) => !hiddenRowsIndex.includes(index));
+
+    filteredArray = filteredArray.filter(row => row.some(cell => cell !== '' && cell !== null));
 
     //Write genesis
-        for (i=1; i < sheetValues.length; i++){
+        for (i=1; i < filteredArray.length; i++){
             
             await googleSheets.spreadsheets.values.append({
             auth,
@@ -109,7 +118,7 @@ app.post('/', async (req, res) => {
             valueInputOption: "USER_ENTERED",
             resource: {
                 values: [
-                    ["", "", sheetValues[i][2], "", "", sheetValues[i][4], compareDates(sheetValues[i][6], today), sheetValues[i][7], "", sheetValues[i][5], compareDates(sheetValues[i][6], today), sheetValues[i][7], "CPM", "", "", "", sheetValues[i][8], "", sheetValues[i][5], "Display", compareDates(sheetValues[i][6], today) + " 12:00 AM", sheetValues[i][7] + " 11:59 PM", "No", sheetValues[i][9], "", sheetValues[i][11], sheetValues[i][12]],
+                    ["", "", filteredArray[i][2], "", "", filteredArray[i][4], compareDates(filteredArray[i][6], today), filteredArray[i][7], "", filteredArray[i][5], compareDates(filteredArray[i][6], today), filteredArray[i][7], "CPM", "", "", "", filteredArray[i][8], "", filteredArray[i][5], "Display", compareDates(filteredArray[i][6], today) + " 12:00 AM", filteredArray[i][7] + " 11:59 PM", "No", "Even", "", filteredArray[i][11], filteredArray[i][12]],
                 ]
             }
         })
